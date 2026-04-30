@@ -1,0 +1,18 @@
+# Virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Generated data
+data/target/
+data/metadata.csv
+
+# Model and results
+adapted_model/
+results/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
