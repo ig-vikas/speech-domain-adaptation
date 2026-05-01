@@ -16,7 +16,7 @@ import time
 import warnings
 warnings.filterwarnings("ignore")
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Query
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 import torch
@@ -144,7 +144,7 @@ def home():
 
 
 @app.post("/transcribe")
-async def transcribe(audio: UploadFile = File(...), reference: str = ""):
+async def transcribe(audio: UploadFile = File(...), reference: str = Form("")):
     """
     Transcribe an uploaded audio file using both models.
     Returns predictions from baseline and adapted model with metrics.
@@ -227,14 +227,14 @@ async def transcribe(audio: UploadFile = File(...), reference: str = ""):
 
         if reference.strip():
             ref = reference.strip().upper()
-            b_wer = calculate_wer(ref, baseline_text) if baseline_text else None
-            a_wer = calculate_wer(ref, adapted_text) if adapted_text else None
-            b_cer = calculate_cer(ref, baseline_text) if baseline_text else None
-            a_cer = calculate_cer(ref, adapted_text) if adapted_text else None
+            b_wer = calculate_wer(ref, baseline_text)
+            a_wer = calculate_wer(ref, adapted_text) if adapted_model is not None else None
+            b_cer = calculate_cer(ref, baseline_text)
+            a_cer = calculate_cer(ref, adapted_text) if adapted_model is not None else None
             result["reference"] = ref
-            result["baseline_wer"] = round(b_wer * 100, 2) if b_wer is not None else None
+            result["baseline_wer"] = round(b_wer * 100, 2)
             result["adapted_wer"] = round(a_wer * 100, 2) if a_wer is not None else None
-            result["baseline_cer"] = round(b_cer * 100, 2) if b_cer is not None else None
+            result["baseline_cer"] = round(b_cer * 100, 2)
             result["adapted_cer"] = round(a_cer * 100, 2) if a_cer is not None else None
 
         return JSONResponse(result)
@@ -303,7 +303,7 @@ def transcribe_sample(file_id: str):
         adapted_text = transcribe_audio(adapted_model, adapted_processor, audio_array, sr)
 
     b_wer = calculate_wer(reference, baseline_text)
-    a_wer = calculate_wer(reference, adapted_text) if adapted_text else None
+    a_wer = calculate_wer(reference, adapted_text) if adapted_model is not None else None
 
     return JSONResponse({
         "file_id": file_id,
